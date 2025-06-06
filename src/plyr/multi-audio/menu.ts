@@ -219,27 +219,25 @@ export class AudioSettings {
     if (settingsMenu) {
       this.settingsMenu = settingsMenu as HTMLDivElement;
       this.createMenu();
-
-      plyr.on("ready", () => {
-        const selected = Number.isFinite(this.hls?.audioTrack)
-          ? (this.hls?.audioTrack as number)
-          : -1;
-        const valueEl = this.homeMenuOption?.querySelector(
-          "span.plyr__menu__value"
-        ) as HTMLSpanElement;
-        if (selected >= 0 && valueEl) {
-          valueEl.innerText = this.items[selected]?.name || valueEl.innerText;
-          this.items.forEach((item, i) => {
-            if (item.element) {
-              if (i === selected) {
-                item.element.ariaChecked = "true";
-                return;
-              }
-              item.element.ariaChecked = "false";
+      
+      const selected = Number.isFinite(this.hls?.audioTrack)
+        ? (this.hls?.audioTrack as number)
+        : -1;
+      const valueEl = this.homeMenuOption?.querySelector(
+        "span.plyr__menu__value"
+      ) as HTMLSpanElement;
+      if (selected >= 0 && valueEl) {
+        valueEl.innerText = this.items[selected]?.name || valueEl.innerText;
+        this.items.forEach((item, i) => {
+          if (item.element) {
+            if (i === selected) {
+              item.element.ariaChecked = "true";
+              return;
             }
-          });
-        }
-      });
+            item.element.ariaChecked = "false";
+          }
+        });
+      }
     }
   }
 }

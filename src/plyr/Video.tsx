@@ -33,6 +33,11 @@ export default function VideoPlayer({ src = "" }) {
 
   useEffect(() => {
     if (videoRef.current) {
+      hlsRef.current?.destroy();
+      hlsRef.current = null;
+      playerRef.current?.destroy();
+      playerRef.current = null;
+
       const video = videoRef.current;
       const defaultOptions: Partial<Plyr.Options> = {};
 
@@ -81,6 +86,12 @@ export default function VideoPlayer({ src = "" }) {
             },
           };
 
+          // Initialize new Plyr player with quality options
+          const player = new Plyr(video, defaultOptions);
+          console.log("PLYR :", player);
+          playerRef.current = player;
+          // new AudioSettings(player, hls);
+
           hls.on(Hls.Events.LEVEL_SWITCHED, function (event, data) {
             const span = document.querySelector(
               ".plyr__menu__container [data-plyr='quality'][value='0'] span"
@@ -94,12 +105,10 @@ export default function VideoPlayer({ src = "" }) {
             }
           });
 
-          // Initialize new Plyr player with quality options
-          if (!playerRef.current) {
-            playerRef.current = new Plyr(video, defaultOptions);
-            console.log("PLYR :", playerRef.current);
-          }
-          playerRef.current && new AudioSettings(playerRef.current, hls);
+          hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, () => {
+            // @ts-ignore
+            new AudioSettings(playerRef.current, hlsRef.current);
+          });
         });
 
         hls.on(Hls.Events.ERROR, (e, data) => {
@@ -109,13 +118,14 @@ export default function VideoPlayer({ src = "" }) {
         hls.attachMedia(video);
       }
       return () => {
-        // playerRef.current?.destroy(() => {}, true);
-        hlsRef.current?.detachMedia();
+        playerRef.current?.destroy();
+        hlsRef.current?.destroy();
         // playerRef.current = null;
         // hlsRef.current = null;
       };
     }
   }, [videoRef.current, src]);
 
-  return <video ref={videoRef}></video>;
+  // @ts-ignore
+  return <video key={`video-${playerRef.current?.id}`} ref={videoRef}></video>;
 }
