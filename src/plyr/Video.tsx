@@ -54,25 +54,30 @@ export default function VideoPlayer({ src = "" }) {
           subsRef.current = hls.subtitleTracks;
           videosRef.current = hls.levels;
 
-          // Transform available levels into an array of integers (height values).
-          const availableQualities = hls.levels
-            .map((l) => l.height)
-            .sort()
-            .reverse()
-            .filter((q) => !!q);
-          availableQualities.push(0); // append 0 (auto) to quality array
+          // Quality levels
+          const availableQualities = [...hls.levels]
+            .sort((a, b) => a.height - b.height)
+            .reverse();
+          // .filter((l) => !!l.id);
+          console.log("Levels :", availableQualities);
 
           // Add new qualities to option
           defaultOptions.quality = {
-            default: 0, // Default - AUTO
-            options: availableQualities,
+            default: 0,
+            options: [0, ...availableQualities.map((lv) => lv.height)],
             forced: true,
             onChange: (v) => updateQuality(v),
           };
-          // Add Auto Label
+          // Labels
           defaultOptions.i18n = {
             qualityLabel: {
               0: "Auto",
+              ...Object.fromEntries(
+                availableQualities.map((lv, i) => [
+                  lv.height,
+                  lv.height.toString() || `Quality-${i + 1}`,
+                ])
+              ),
             },
           };
 
