@@ -212,15 +212,15 @@ export class AudioSettings {
     this.plyr = plyr;
     this.hls = hls;
 
-    plyr.on("ready", () => {
-      const settingsMenu = document.querySelector(
-        "div.plyr__controls__item.plyr__menu > div.plyr__menu__container > div"
-      );
-      console.log(settingsMenu);
-      if (settingsMenu) {
-        this.settingsMenu = settingsMenu as HTMLDivElement;
-        this.createMenu();
+    const settingsMenu = document.querySelector(
+      "div.plyr__controls__item.plyr__menu > div.plyr__menu__container > div"
+    );
+    console.log(settingsMenu);
+    if (settingsMenu) {
+      this.settingsMenu = settingsMenu as HTMLDivElement;
+      this.createMenu();
 
+      plyr.on("ready", () => {
         const selected = Number.isFinite(this.hls?.audioTrack)
           ? (this.hls?.audioTrack as number)
           : -1;
@@ -239,7 +239,7 @@ export class AudioSettings {
             }
           });
         }
-      }
-    });
+      });
+    }
   }
 }

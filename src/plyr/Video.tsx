@@ -95,9 +95,11 @@ export default function VideoPlayer({ src = "" }) {
           });
 
           // Initialize new Plyr player with quality options
-          playerRef.current = new Plyr(video, defaultOptions);
-          console.log("PLYR :", playerRef.current);
-          new AudioSettings(playerRef.current, hls);
+          if (!playerRef.current) {
+            playerRef.current = new Plyr(video, defaultOptions);
+            console.log("PLYR :", playerRef.current);
+          }
+          playerRef.current && new AudioSettings(playerRef.current, hls);
         });
 
         hls.on(Hls.Events.ERROR, (e, data) => {
@@ -106,6 +108,12 @@ export default function VideoPlayer({ src = "" }) {
 
         hls.attachMedia(video);
       }
+      return () => {
+        // playerRef.current?.destroy(() => {}, true);
+        hlsRef.current?.detachMedia();
+        // playerRef.current = null;
+        // hlsRef.current = null;
+      };
     }
   }, [videoRef.current, src]);
 
