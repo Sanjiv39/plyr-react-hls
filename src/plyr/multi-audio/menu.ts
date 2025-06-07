@@ -18,6 +18,25 @@ export type ExtendedPlyr = Plyr &
       }>;
   }>;
 
+export const removeChild = <
+  P extends Node | HTMLElement,
+  C extends Node | HTMLElement
+>(
+  parent: P | null | undefined,
+  child: C | null | undefined
+) => {
+  try {
+    if (!parent || !child) {
+      throw new Error("Parent and child both are required");
+    }
+    parent?.removeChild?.(child);
+    return true;
+  } catch (err) {
+    console.error("Error removing child :", err);
+    return false;
+  }
+};
+
 export class AudioSettings {
   plyr: ExtendedPlyr | null = null;
   hls: Hls | null = null;
@@ -55,7 +74,7 @@ export class AudioSettings {
 
     const idClass = `plyr__settings-home__audios-menu__${this.plyr?.id}`;
     const existing = document.querySelector(`.${idClass}`);
-    existing && homeMenu?.removeChild(existing);
+    removeChild(homeMenu, existing);
 
     // Create menu button
     const btn = document.createElement("button");
@@ -99,7 +118,7 @@ export class AudioSettings {
 
     // Clean existing audio menu
     const existing = document.querySelector(id);
-    existing && this.settingsMenu?.removeChild(existing);
+    removeChild(this.settingsMenu, existing);
 
     // Menu Wrapper
     const menuWrapper = document.createElement("div");
@@ -208,36 +227,40 @@ export class AudioSettings {
   };
 
   constructor(plyr: ExtendedPlyr, hls: Hls) {
-    this.validateParams(plyr, hls);
-    this.plyr = plyr;
-    this.hls = hls;
+    try {
+      this.validateParams(plyr, hls);
+      this.plyr = plyr;
+      this.hls = hls;
 
-    const settingsMenu = document.querySelector(
-      "div.plyr__controls__item.plyr__menu > div.plyr__menu__container > div"
-    );
-    console.log(settingsMenu);
-    if (settingsMenu) {
-      this.settingsMenu = settingsMenu as HTMLDivElement;
-      this.createMenu();
-      
-      const selected = Number.isFinite(this.hls?.audioTrack)
-        ? (this.hls?.audioTrack as number)
-        : -1;
-      const valueEl = this.homeMenuOption?.querySelector(
-        "span.plyr__menu__value"
-      ) as HTMLSpanElement;
-      if (selected >= 0 && valueEl) {
-        valueEl.innerText = this.items[selected]?.name || valueEl.innerText;
-        this.items.forEach((item, i) => {
-          if (item.element) {
-            if (i === selected) {
-              item.element.ariaChecked = "true";
-              return;
+      const settingsMenu = document.querySelector(
+        "div.plyr__controls__item.plyr__menu > div.plyr__menu__container > div"
+      );
+      console.log(settingsMenu);
+      if (settingsMenu) {
+        this.settingsMenu = settingsMenu as HTMLDivElement;
+        this.createMenu();
+
+        const selected = Number.isFinite(this.hls?.audioTrack)
+          ? (this.hls?.audioTrack as number)
+          : -1;
+        const valueEl = this.homeMenuOption?.querySelector(
+          "span.plyr__menu__value"
+        ) as HTMLSpanElement;
+        if (selected >= 0 && valueEl) {
+          valueEl.innerText = this.items[selected]?.name || valueEl.innerText;
+          this.items.forEach((item, i) => {
+            if (item.element) {
+              if (i === selected) {
+                item.element.ariaChecked = "true";
+                return;
+              }
+              item.element.ariaChecked = "false";
             }
-            item.element.ariaChecked = "false";
-          }
-        });
+          });
+        }
       }
+    } catch (err) {
+      console.error("Audio Settings error :", err);
     }
   }
 }

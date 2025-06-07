@@ -9,4 +9,9 @@ export default defineConfig({
     port: 3003,
     open: true,
   },
+  build: {
+    rollupOptions: {
+      external: ["prop-types"],
+    },
+  },
 });

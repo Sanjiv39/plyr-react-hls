@@ -1,16 +1,19 @@
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import Hls from "hls.js";
-import Plyr from "plyr";
+// import Plyr from "plyr";
 import "plyr/dist/plyr.css";
+import Plyr, { APITypes, PlyrProps, PlyrInstance } from "plyr-react";
 import { AudioSettings } from "./multi-audio/menu";
 
 export default function VideoPlayer({ src = "" }) {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const videoRef = useRef<APITypes | null>(null);
   const playerRef = useRef<Plyr | null>(null);
   const hlsRef = useRef<Hls | null>(null);
   const videosRef = useRef<Hls["levels"]>([]);
   const audiosRef = useRef<Hls["audioTracks"]>([]);
   const subsRef = useRef<Hls["subtitleTracks"]>([]);
+  const id = Date.now();
+  const [options, setOptions] = useState({});
 
   const updateQuality = useCallback(
     (newQuality: number = 0) => {
@@ -35,16 +38,20 @@ export default function VideoPlayer({ src = "" }) {
     if (videoRef.current) {
       hlsRef.current?.destroy();
       hlsRef.current = null;
-      playerRef.current?.destroy();
-      playerRef.current = null;
+      // playerRef.current?.destroy();
+      // playerRef.current = null;
 
       const video = videoRef.current;
-      const defaultOptions: Partial<Plyr.Options> = {};
+      const defaultOptions: Partial<Plyr.Options> = {
+        debug: true,
+        // @ts-ignore
+        // id: Date.now(),
+      };
 
       if (!Hls.isSupported()) {
         console.log("Hls not supported !");
-        video.src = src;
-        playerRef.current = new Plyr(video, defaultOptions);
+        // video = src;
+        // playerRef.current = new Plyr(video, defaultOptions);
       } else {
         console.log("Hls is supported !");
         hlsRef.current = new Hls();
@@ -85,11 +92,18 @@ export default function VideoPlayer({ src = "" }) {
               ),
             },
           };
+          setOptions(defaultOptions);
 
           // Initialize new Plyr player with quality options
-          const player = new Plyr(video, defaultOptions);
+          const player = videoRef.current?.plyr;
           console.log("PLYR :", player);
-          playerRef.current = player;
+          console.log("PLYR Config :", player?.config);
+          console.log("PLYR Source :", player?.source);
+          playerRef.current = player || null;
+          player?.on("ready", () => {
+            console.log(":: PLYR Ready ::");
+            new AudioSettings(player, hls);
+          });
           // new AudioSettings(player, hls);
 
           hls.on(Hls.Events.LEVEL_SWITCHED, function (event, data) {
@@ -107,15 +121,16 @@ export default function VideoPlayer({ src = "" }) {
 
           hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, () => {
             // @ts-ignore
-            new AudioSettings(playerRef.current, hlsRef.current);
           });
         });
 
         hls.on(Hls.Events.ERROR, (e, data) => {
           console.error("HLS Error :", data);
         });
-
-        hls.attachMedia(video);
+        setOptions(defaultOptions);
+        // @ts-ignore
+        hls.attachMedia(video.plyr.media);
+        console.log("HLS source :", hls);
       }
       return () => {
         playerRef.current?.destroy();
@@ -127,5 +142,5 @@ export default function VideoPlayer({ src = "" }) {
   }, [videoRef.current, src]);
 
   // @ts-ignore
-  return <video key={`video-${playerRef.current?.id}`} ref={videoRef}></video>;
+  return <Plyr id={`player-${id}`} ref={videoRef} options={options}></Plyr>;
 }
