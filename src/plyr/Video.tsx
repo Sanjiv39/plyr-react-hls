@@ -1,41 +1,45 @@
-import { useRef, useEffect, useCallback, useState } from "react";
+import { useRef, useEffect, useCallback, useState, useMemo } from "react";
 import Hls from "hls.js";
-// import Plyr from "plyr";
+import Plyr from "plyr";
 import "plyr/dist/plyr.css";
-import Plyr, { APITypes, PlyrProps, PlyrInstance } from "plyr-react";
+// import Plyr, { APITypes, PlyrProps, PlyrInstance } from "plyr-react";
 import { AudioSettings } from "./multi-audio/menu";
 
 export default function VideoPlayer({ src = "" }) {
-  const videoRef = useRef<APITypes | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const playerRef = useRef<Plyr | null>(null);
   const hlsRef = useRef<Hls | null>(null);
   const videosRef = useRef<Hls["levels"]>([]);
   const audiosRef = useRef<Hls["audioTracks"]>([]);
   const subsRef = useRef<Hls["subtitleTracks"]>([]);
-  const id = Date.now();
+  const id = useMemo(() => Date.now(), []);
   const [options, setOptions] = useState({});
 
   const updateQuality = useCallback(
     (newQuality: number = 0) => {
-      if (hlsRef.current) {
-        const hls = hlsRef.current;
-        if (newQuality === 0) {
-          hls.currentLevel = -1; // Enable AUTO quality if option.value = 0
-        } else {
-          hls.levels.forEach((level, levelIndex) => {
-            if (level.height === newQuality) {
-              console.log("Found quality match with " + newQuality);
-              hls.currentLevel = levelIndex;
-            }
-          });
+      try {
+        console.log(hlsRef.current, newQuality);
+        if (hlsRef.current) {
+          const hls = hlsRef.current;
+          if (newQuality === 0) {
+            hls.currentLevel = -1;
+          } else {
+            const ind = hls.levels.findIndex(
+              (level) => level.height === newQuality
+            );
+            hls.currentLevel = ind;
+          }
         }
-      }
+      } catch (err) {}
     },
     [hlsRef.current]
   );
 
   useEffect(() => {
-    if (videoRef.current) {
+    const video2 = document.querySelector(
+      `#player-video2-${id}`
+    ) as HTMLVideoElement | null;
+    if (videoRef.current && video2) {
       hlsRef.current?.destroy();
       hlsRef.current = null;
       // playerRef.current?.destroy();
@@ -43,15 +47,13 @@ export default function VideoPlayer({ src = "" }) {
 
       const video = videoRef.current;
       const defaultOptions: Partial<Plyr.Options> = {
-        debug: true,
-        // @ts-ignore
-        // id: Date.now(),
+        // debug: true,
       };
 
       if (!Hls.isSupported()) {
         console.log("Hls not supported !");
-        // video = src;
-        // playerRef.current = new Plyr(video, defaultOptions);
+        video.src = src;
+        playerRef.current = new Plyr(video, defaultOptions);
       } else {
         console.log("Hls is supported !");
         hlsRef.current = new Hls();
@@ -95,7 +97,7 @@ export default function VideoPlayer({ src = "" }) {
           setOptions(defaultOptions);
 
           // Initialize new Plyr player with quality options
-          const player = videoRef.current?.plyr;
+          const player = new Plyr(video, defaultOptions);
           console.log("PLYR :", player);
           console.log("PLYR Config :", player?.config);
           console.log("PLYR Source :", player?.source);
@@ -104,6 +106,7 @@ export default function VideoPlayer({ src = "" }) {
             console.log(":: PLYR Ready ::");
             new AudioSettings(player, hls);
           });
+          // video2.play();
           // new AudioSettings(player, hls);
 
           hls.on(Hls.Events.LEVEL_SWITCHED, function (event, data) {
@@ -122,6 +125,10 @@ export default function VideoPlayer({ src = "" }) {
           hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, () => {
             // @ts-ignore
           });
+
+          // hls.on(Hls.Events.load, ()=>{
+
+          // })
         });
 
         hls.on(Hls.Events.ERROR, (e, data) => {
@@ -129,11 +136,13 @@ export default function VideoPlayer({ src = "" }) {
         });
         setOptions(defaultOptions);
         // @ts-ignore
-        hls.attachMedia(video.plyr.media);
+        // hls.attachMedia(video);
         console.log("HLS source :", hls);
+
+        video2 && hls.attachMedia(video2);
       }
       return () => {
-        playerRef.current?.destroy();
+        // playerRef.current?.destroy();
         hlsRef.current?.destroy();
         // playerRef.current = null;
         // hlsRef.current = null;
@@ -142,5 +151,19 @@ export default function VideoPlayer({ src = "" }) {
   }, [videoRef.current, src]);
 
   // @ts-ignore
-  return <Plyr id={`player-${id}`} ref={videoRef} options={options}></Plyr>;
+  return (
+    <>
+      <video
+        className="w-full aspect-video"
+        id={`player-video-${id}`}
+        ref={videoRef}
+      ></video>
+      <video
+        id={`player-video2-${id}`}
+        className="mt-5 w-full aspect-video"
+        controls
+        muted
+      ></video>
+    </>
+  );
 }
