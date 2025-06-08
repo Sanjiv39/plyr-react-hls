@@ -3,7 +3,7 @@ import Hls from "hls.js";
 import Plyr from "plyr";
 import "plyr/dist/plyr.css";
 // import Plyr, { APITypes, PlyrProps, PlyrInstance } from "plyr-react";
-import { AudioSettings } from "./multi-audio/menu";
+import { AudioSettings, ExtendedPlyr } from "./multi-audio/menu";
 
 export default function VideoPlayer({ src = "" }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -97,7 +97,8 @@ export default function VideoPlayer({ src = "" }) {
           setOptions(defaultOptions);
 
           // Initialize new Plyr player with quality options
-          const player = playerRef.current || new Plyr(video, defaultOptions);
+          const player = (playerRef.current ||
+            new Plyr(video, defaultOptions)) as ExtendedPlyr;
           playerRef.current = player || null;
           console.log("PLYR :", player);
           console.log("PLYR Config :", player?.config);

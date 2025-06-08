@@ -16,6 +16,7 @@ export type ExtendedPlyr = Plyr &
           };
         };
       }>;
+    config: Partial<Plyr.Options>;
   }>;
 
 export class AudioError {
