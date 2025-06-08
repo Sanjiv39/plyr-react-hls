@@ -19,14 +19,12 @@ export type ExtendedPlyr = Plyr &
   }>;
 
 export class AudioError {
-  options: Partial<{ type: string; cause: string }> = {};
+  options: Partial<{ type: string; cause: string; err: Error }> = {};
   constructor(message?: string, options?: typeof this.options) {
-    const err = new Error(message);
     this.options = { ...this.options, ...options };
     console.error("Audio Error :", {
-      options: this.options,
+      error: this.options,
       message: message,
-      err: err,
     });
   }
 }
@@ -44,8 +42,8 @@ export const removeChild = <
     }
     parent?.removeChild?.(child);
     return true;
-  } catch (err) {
-    console.error("Error removing child :", err);
+  } catch (err: any) {
+    new AudioError("Error removing child :", { err: err });
     return false;
   }
 };
@@ -79,6 +77,21 @@ export class AudioSettings {
     return plyr instanceof Plyr && hls instanceof Hls;
   }
 
+  cleanExisting = () => {
+    // Remove from home menu
+    const homeMenu = document.querySelector(
+      `div#plyr-settings-${this.plyr?.id}-home > div[role="menu"]`
+    ) as HTMLDivElement | null;
+    const idClass = `plyr__settings-home__audios-menu__${this.plyr?.id}`;
+    const existing = document.querySelector(`.${idClass}`);
+    removeChild(homeMenu, existing);
+
+    // Remove menu
+    const id = `plyr-settings-${this.plyr?.id}-audios`;
+    const existingMenu = document.querySelector(id);
+    removeChild(this.settingsMenu, existingMenu);
+  };
+
   addMenuToHome = () => {
     const homeMenu = document.querySelector(
       `div#plyr-settings-${this.plyr?.id}-home > div[role="menu"]`
@@ -89,8 +102,8 @@ export class AudioSettings {
     }
 
     const idClass = `plyr__settings-home__audios-menu__${this.plyr?.id}`;
-    const existing = document.querySelector(`.${idClass}`);
-    removeChild(homeMenu, existing);
+    // const existing = document.querySelector(`.${idClass}`);
+    // removeChild(homeMenu, existing);
 
     // Create menu button
     const btn = document.createElement("button");
@@ -132,9 +145,9 @@ export class AudioSettings {
   createMenu = () => {
     const id = `plyr-settings-${this.plyr?.id}-audios`;
 
-    // Clean existing audio menu
-    const existing = document.querySelector(id);
-    removeChild(this.settingsMenu, existing);
+    // // Clean existing audio menu
+    // const existing = document.querySelector(id);
+    // removeChild(this.settingsMenu, existing);
 
     // Menu Wrapper
     const menuWrapper = document.createElement("div");
@@ -244,14 +257,17 @@ export class AudioSettings {
 
   constructor(plyr: ExtendedPlyr, hls: Hls) {
     try {
-      this.validateParams(plyr, hls);
-      this.plyr = plyr;
-      this.hls = hls;
-
       const settingsMenu = document.querySelector(
         "div.plyr__controls__item.plyr__menu > div.plyr__menu__container > div"
       );
       console.log(settingsMenu);
+      this.settingsMenu = settingsMenu as HTMLDivElement | null;
+      this.plyr = plyr;
+      this.hls = hls;
+      this.cleanExisting();
+
+      this.validateParams();
+
       if (settingsMenu) {
         this.settingsMenu = settingsMenu as HTMLDivElement;
         this.createMenu();

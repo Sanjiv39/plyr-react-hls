@@ -114,8 +114,8 @@ export default function VideoPlayer({ src = "" }) {
               active: false,
             };
           }
-          playerRef.current?.on("ready", () => {
-            console.log(":: PLYR Ready ::");
+          player?.on("canplay", () => {
+            console.log(":: PLYR Can Play ::");
             // @ts-ignore
             new AudioSettings(playerRef.current, hlsRef.current);
           });
