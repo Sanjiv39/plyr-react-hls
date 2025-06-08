@@ -18,6 +18,19 @@ export type ExtendedPlyr = Plyr &
       }>;
   }>;
 
+export class AudioError {
+  options: Partial<{ type: string; cause: string }> = {};
+  constructor(message?: string, options?: typeof this.options) {
+    const err = new Error(message);
+    this.options = { ...this.options, ...options };
+    console.error("Audio Error :", {
+      options: this.options,
+      message: message,
+      err: err,
+    });
+  }
+}
+
 export const removeChild = <
   P extends Node | HTMLElement,
   C extends Node | HTMLElement
@@ -56,6 +69,9 @@ export class AudioSettings {
     }
     if (!hls || !(hls instanceof Hls)) {
       throw new Error("Hls invalid");
+    }
+    if (hls.audioTracks.length < 2) {
+      throw new Error("No multi audios");
     }
     if (typeof plyr?.id !== "number" || !Number.isFinite(plyr?.id)) {
       throw new Error("Plyr has no valid id");
@@ -259,8 +275,8 @@ export class AudioSettings {
           });
         }
       }
-    } catch (err) {
-      console.error("Audio Settings error :", err);
+    } catch (err: any) {
+      new AudioError(err?.message, { type: "main", cause: "constructor" });
     }
   }
 }

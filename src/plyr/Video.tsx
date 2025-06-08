@@ -97,15 +97,29 @@ export default function VideoPlayer({ src = "" }) {
           setOptions(defaultOptions);
 
           // Initialize new Plyr player with quality options
-          const player = new Plyr(video, defaultOptions);
+          const player = playerRef.current || new Plyr(video, defaultOptions);
+          playerRef.current = player || null;
           console.log("PLYR :", player);
           console.log("PLYR Config :", player?.config);
           console.log("PLYR Source :", player?.source);
-          playerRef.current = player || null;
-          player?.on("ready", () => {
+          if (player?.config?.quality) {
+            player.config.quality = {
+              ...player.config.quality,
+              ...defaultOptions.quality,
+            };
+          }
+          if (player?.config?.captions) {
+            player.config.captions = {
+              ...player.config.captions,
+              active: false,
+            };
+          }
+          playerRef.current?.on("ready", () => {
             console.log(":: PLYR Ready ::");
-            new AudioSettings(player, hls);
+            // @ts-ignore
+            new AudioSettings(playerRef.current, hlsRef.current);
           });
+
           // video2.play();
           // new AudioSettings(player, hls);
 
@@ -136,10 +150,10 @@ export default function VideoPlayer({ src = "" }) {
         });
         setOptions(defaultOptions);
         // @ts-ignore
-        // hls.attachMedia(video);
+        hls.attachMedia(video);
         console.log("HLS source :", hls);
 
-        video2 && hls.attachMedia(video2);
+        // video2 && hls.attachMedia(video2);
       }
       return () => {
         // playerRef.current?.destroy();
@@ -163,6 +177,7 @@ export default function VideoPlayer({ src = "" }) {
         className="mt-5 w-full aspect-video"
         controls
         muted
+        hidden
       ></video>
     </>
   );
